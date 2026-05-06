@@ -90,3 +90,9 @@ This repository contains a minimal web-based chatbot built using Google's Gemini
 ## Notes & Constraints
 * **Do not upload massive PDFs.** Extraction is CPU-bound and handled asynchronously, but passing thousands of tokens will hit the Gemini API rate limits.
 * State is stored in a Python dictionary. Restarting the backend server will wipe all active chat histories.
+
+# Gemini Multimodal Chatbot - Infollion Task
+
+**Live Frontend:** [https://gemini-chatbot-six-beta.vercel.app/](https://gemini-chatbot-six-beta.vercel.app/)
+
+**Live Backend:** [https://gemini-chatbot-5qw4.onrender.com/](https://gemini-chatbot-5qw4.onrender.com/)
