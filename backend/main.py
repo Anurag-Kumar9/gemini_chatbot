@@ -21,6 +21,33 @@ app.add_middleware(
 # Format: { chat_id: [{"role": "user", "parts": [...]}, {"role": "model", "parts": [...]}] }
 chat_sessions = {}
 
+def gemini_error_response(error: Exception) -> HTTPException:
+    """
+    Converts common Gemini upstream failures into useful client responses.
+    """
+    error_text = str(error)
+    upper_error = error_text.upper()
+
+    if "503" in error_text or "UNAVAILABLE" in upper_error:
+        return HTTPException(
+            status_code=503,
+            detail="Gemini is temporarily unavailable or under high demand. Please try again shortly."
+        )
+
+    if "429" in error_text or "RATE" in upper_error or "QUOTA" in upper_error:
+        return HTTPException(
+            status_code=429,
+            detail="Gemini rate limit or quota was reached. Please try again later."
+        )
+
+    if "400" in error_text or "INVALID_ARGUMENT" in upper_error:
+        return HTTPException(
+            status_code=400,
+            detail=f"Gemini rejected the request: {error_text}"
+        )
+
+    return HTTPException(status_code=500, detail=f"Gemini API Error: {error_text}")
+
 @app.post("/api/chat")
 async def process_chat(
     chat_id: str = Form(...),
@@ -54,8 +81,7 @@ async def process_chat(
             parsed_file=parsed_file
         )
     except Exception as e:
-        # If Gemini rate-limits you or throws a fit, don't crash the server
-        raise HTTPException(status_code=500, detail=f"Gemini API Error: {str(e)}")
+        raise gemini_error_response(e)
 
     # Update Memory
     # Append the user's turn

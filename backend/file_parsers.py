@@ -3,6 +3,12 @@ import asyncio
 import PyPDF2
 from fastapi import UploadFile, HTTPException
 
+IMAGE_MIME_TYPES = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+}
+
 def _extract_pdf_sync(file_bytes: bytes) -> str:
     """Synchronous CPU-bound PDF extraction."""
     reader = PyPDF2.PdfReader(io.BytesIO(file_bytes))
@@ -38,10 +44,16 @@ async def parse_uploaded_file(file: UploadFile) -> dict:
         }
         
     elif filename.endswith(('.png', '.jpg', '.jpeg')):
-        # Gemini Vision needs raw bytes and the exact mime type[cite: 1]
+        mime_type = file.content_type
+        if not mime_type or mime_type == "application/octet-stream":
+            mime_type = next(
+                value for suffix, value in IMAGE_MIME_TYPES.items()
+                if filename.endswith(suffix)
+            )
+
         return {
             "type": "image", 
-            "mime_type": file.content_type, 
+            "mime_type": mime_type, 
             "data": file_bytes
         }
         
